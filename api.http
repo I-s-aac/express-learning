@@ -1,0 +1,26 @@
+###
+GET http://localhost:3000/users/1
+###
+GET http://localhost:3000/demo?parameter=data
+###
+POST http://localhost:3000/users/create
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "username": "the guy",
+  "password": "aaaaa",
+  "firstName": "a",
+  "lastName": "b"
+}
+###
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "password": "aa"
+}
+###
+GET http://localhost:3000/getProtectedData
+Authorization: Bearer replaceThisTextWithTokens
