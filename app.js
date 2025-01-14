@@ -1,54 +1,42 @@
 import express from "express";
-import { createServer } from "http";
-import { Server } from "socket.io";
+import session from "express-session";
+import passport from "passport";
 
+import { configure } from "./config/passport.config.js";
+import { authRouter } from "./routes/config.js";
+
+import dotenv from "dotenv";
+dotenv.config();
+
+const port = 3000;
 const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer);
-const port = process.env.PORT || 3000;
-const clients = {};
 
-app.use(express.static("public"));
+// this is where the .pug files are
+app.set("views", "./views");
+app.set("view engine", "pug");
 
-io.on("connection", (socket) => {
-  console.log("socket connected");
-  const client = {
-    id: socket.id,
-    color: Math.random() > 0.5 ? "red" : "blue",
-    x: 0,
-    y: 0,
-  };
-  clients[client.id] = client;
-  io.emit("players", clients);
+app.use(
+  session({
+    secret: process.env.SECRET || "jafj;eal",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 
-  socket.on("disconnect", () => {
-    console.log("socket disconnected");
-    // sends this event to all other clients with specified content
-    // socket.broadcast.emit("player left", socket.id);
-    // sends this to all clients
-    io.emit("player left", socket.id);
-    delete clients[socket.id];
-  });
+app.use(passport.initialize());
+app.use(passport.session());
 
-  // socket.on("newClient", (username) => {
-  //   console.log("new client ", username);
+configure(passport);
+app.use("/auth", authRouter(express, passport));
 
-  //   io.emit("newClient", client);
-  // });
-
-  socket.on("message", (message) => {
-    console.log("from client: ", message);
-    io.emit("message", message);
-  });
-
-  socket.on("updatePos", (pos) => {
-    console.log("new pos: ", pos);
-    clients[socket.id].x = pos[0];
-    clients[socket.id].y = pos[1];
-    io.emit("players", clients);
-  });
+app.get("/", (req, res) => {
+  res.render("index");
 });
 
-httpServer.listen(port, () => {
+app.get("/displayUserDetails", (req, res) => {
+  res.render("userDetails", { user: req.user });
+});
+
+app.listen(port, () => {
   console.log(`server listening on port ${port}`);
 });
